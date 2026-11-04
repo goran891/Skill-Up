@@ -1,15 +1,11 @@
-<!DOCTYPE html>
-<html lang="ckb" dir="rtl">
-<head>
+<!DOCTYPE html><html lang="ckb" dir="rtl"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پلاتفۆرمی فێربوون و پێشبڕکێ - Quiz Champion</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Vazirmatn', sans-serif; } </style>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+    <style> body { font-family: 'Vazirmatn', sans-serif; } </style></head><body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
     <!-- Navigation Header -->
     <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50">
@@ -410,6 +406,111 @@
             renderView();
         }
 
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            currentUserName = document.getElementById('reg-fullname').value;
+            alert('هەژمارەکەت بە سەرکەوتوویی دروست کرا!');
+            closeModal('register-modal');
+            document.getElementById('auth-buttons').innerHTML = `<span class="text-xs font-bold text-indigo-400 py-1.5">${currentUserName}</span>`;
+            if(document.getElementById('reg-email').value === ADMIN_EMAIL) {
+                document.getElementById('admin-dashboard-nav-btn').classList.remove('hidden');
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            alert('بە سەرکەوتوویی چوویە ژوورەوە!');
+            closeModal('login-modal');
+            document.getElementById('auth-buttons').innerHTML = `<span class="text-xs font-bold text-indigo-400 py-1.5">خاوەن هەژمار</span>`;
+            if(email === ADMIN_EMAIL) {
+                document.getElementById('admin-dashboard-nav-btn').classList.remove('hidden');
+            }
+        }
+
+        function openLeaderboardModal() {
+            let listHtml = '';
+            studentsList.sort((a, b) => b.xp - a.xp).forEach((s, idx) => {
+                listHtml += `<div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700">
+                    <span class="font-bold text-white">${idx + 1}. ${s.name}</span>
+                    <span class="text-amber-400 font-bold"><i class="fa-solid fa-star"></i> ${s.xp} XP</span>
+                </div>`;
+            });
+            document.getElementById('leaderboard-list').innerHTML = listHtml;
+            openModal('leaderboard-modal');
+        }
+
+        // Interactive Quiz & Question Bank Engine with 100 questions support & Next button fix
+        function startInteractiveQuiz(type, chapterNum) {
+            openModal('module-modal');
+            document.getElementById('module-modal-title').innerText = type === 'qbank' ? `بانکی پرسیاری زیندەزانی - بەندی ${chapterNum} (١٠٠ پرسیار)` : `کویزی ژمارە ${chapterNum} (١٠ پرسیار)`;
+            
+            let questionsPool = (chapterNum === 2) ? chapter2Questions : chapter1Questions;
+            let activeQuestions = (type === 'quiz') ? questionsPool.slice(0, 10) : questionsPool;
+
+            let currentIndex = 0;
+            let score = 0;
+
+            function renderQuestion() {
+                if (currentIndex >= activeQuestions.length) {
+                    document.getElementById('module-modal-body').innerHTML = `
+                        <div class="text-center py-8 space-y-4">
+                            <i class="fa-solid fa-award text-6xl text-amber-400"></i>
+                            <h3 class="text-xl font-bold text-white">ئاهەنگی سەرکەوتن! کویزەکە تەواو بوو</h3>
+                            <p class="text-sm text-slate-300">نمرەی بەدەستهاتوو: <span class="text-amber-400 font-bold">${score}</span> لە <span class="text-indigo-400 font-bold">${activeQuestions.length}</span></p>
+                            <button onclick="closeModal('module-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-xs">گەڕانەوە بۆ پلاتفۆرم</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let q = activeQuestions[currentIndex];
+                let optionsHtml = '';
+                q.options.forEach((opt, idx) => {
+                    optionsHtml += `<label class="block bg-slate-900 border border-slate-700 p-3 rounded-xl cursor-pointer hover:border-indigo-500 transition text-slate-200 text-xs">
+                        <input type="radio" name="quiz_option" value="${idx}" class="ml-2"> ${opt}
+                    </label>`;
+                });
+
+                document.getElementById('module-modal-body').innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between text-xs text-slate-400 font-bold border-b border-slate-700 pb-2">
+                            <span>پرسیاری ${currentIndex + 1} لە ${activeQuestions.length}</span>
+                            <span>نمرە: ${score}</span>
+                        </div>
+                        <h4 class="font-bold text-white text-sm leading-relaxed">${q.text}</h4>
+                        <div class="space-y-2">${optionsHtml}</div>
+                        <button id="next-q-btn" onclick="submitAnswer(${q.correct})" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg">پاشان / وەڵامدانەوە</button>
+                    </div>
+                `;
+            }
+
+            window.submitAnswer = function(correctIndex) {
+                const selected = document.querySelector('input[name="quiz_option"]:checked');
+                if (!selected) {
+                    alert('تکایە هەڵبژاردەیەک دیاری بکە!');
+                    return;
+                }
+                if (parseInt(selected.value) === correctIndex) {
+                    score++;
+                    userXP += 5;
+                    document.getElementById('user-xp').innerText = userXP;
+                }
+                currentIndex++;
+                renderQuestion();
+            };
+
+            renderQuestion();
+        }
+
         function handleModuleSelection(moduleId, moduleTitle) {
             const modalTitle = document.getElementById('module-modal-title');
             const modalBody = document.getElementById('module-modal-body');
@@ -422,265 +523,48 @@
                         <div class="space-y-3">
                             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
                                 <div>
-                                    <h4 class="font-bold text-white">کتێبی فەرمی زیندەزانی پۆلی ١٢ (چاپی ٢٠٢٢)</h4>
-                                    <p class="text-slate-400 text-[11px]">فایلی PDF بۆ خوێندنەوەی بەردەوامی سەرجەم بەندەکان</p>
+                                    <h4 class="font-bold text-white">کتێبی فەرمی زیندەزانی پۆلی ١٢ (چاپی نوێ)</h4>
+                                    <p class="text-slate-400 text-[11px]">خوێندنەوەی بەردەوامی سەرجەم بەندەکان بە شێوازی PDF و دەقی ڕوون</p>
                                 </div>
-                                <button onclick="alert('کتێبی فەرمی PDF بارکرا و دەستی پێکرد بۆ خوێندنەوە!')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold">کردنەوەی PDF</button>
+                                <button onclick="alert('کتێبی فەرمی زیندەزانی پۆلی ١٢ بە سەرکەوتوویی کرایەوە بۆ خوێندنەوە!')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold">کردنەوەی کتێب</button>
                             </div>
                         </div>
                     `;
+                    openModal('module-modal');
                 } else if (moduleId === 'quiz') {
-                    let quizzesListHTML = '<div class="space-y-4 mb-4"><h4 class="font-bold text-white mb-2">کویزە سەربەخۆکان (١ تا ١٠ - هەر کویزێک ١٠ پرسیاری هەڵبژاردنی جیاواز)</h4><div class="grid grid-cols-5 gap-2">';
-                    for(let qz = 1; qz <= 10; qz++) {
-                        quizzesListHTML += `<button onclick="startInteractiveQuiz('quiz', ${qz})" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl text-center font-bold text-xs">کویزی ${qz}</button>`;
+                    let quizzesListHTML = '<div class="space-y-4 mb-4"><h4 class="font-bold text-white mb-2">کویزە سەربەخۆکان (بەندی ١ و ٢ - هەر کویزێک ١٠ پرسیار)</h4><div class="grid grid-cols-2 gap-2">';
+                    for(let qz = 1; qz <= 2; qz++) {
+                        quizzesListHTML += `<button onclick="startInteractiveQuiz('quiz', ${qz})" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl text-center font-bold text-xs">کویزی بەندی ${qz} (١٠ پرسیار)</button>`;
                     }
                     quizzesListHTML += `</div></div><div id="interactive-quiz-container"></div>`;
                     modalBody.innerHTML = quizzesListHTML;
+                    openModal('module-modal');
                 } else if (moduleId === 'qbank') {
                     modalBody.innerHTML = `
                         <div class="space-y-4">
-                            <div class="bg-slate-900 p-4 rounded-2xl border border-purple-500/30 p-4">
-                                <h4 class="font-bold text-purple-400 text-sm mb-2">🏛️ بانکی پرسیاری بەندی ١ (١٠0 پرسیاری تەواو)</h4>
+                            <div class="bg-slate-900 p-4 rounded-2xl border border-purple-500/30">
+                                <h4 class="font-bold text-purple-400 text-sm mb-2">🏛️ بانکی پرسیاری بەندی ١ (١٠٠ پرسیاری تەواو)</h4>
                                 <p class="text-slate-400 text-[11px] mb-3">دابەشبوو بەسەر ئاستەکانی زانستیدا بە ٤ هەڵبژاردن بۆ هەر پرسیارێک.</p>
-                                <button onclick="startInteractiveQuiz('qbank', 1)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30">دەستپێکردنی بانکی پرسیاری بەندی ١ (١٠٠ پرسیار)</button>
+                                <button onclick="startInteractiveQuiz('qbank', 1)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">دەستپێکردنی بانکی پرسیاری بەندی ١</button>
                             </div>
-                            <div class="bg-slate-900 p-4 rounded-2xl border border-purple-500/30 p-4">
-                                <h4 class="font-bold text-purple-400 text-sm mb-2">🏛️ بانکی پرسیاری بەندی ٢ (١٠0 پرسیاری تەواو)</h4>
+                            <div class="bg-slate-900 p-4 rounded-2xl border border-purple-500/30">
+                                <h4 class="font-bold text-purple-400 text-sm mb-2">🏛️ بانکی پرسیاری بەندی ٢ (١٠٠ پرسیاری تەواو)</h4>
                                 <p class="text-slate-400 text-[11px] mb-3">کۆئەندامی سوران و خوێن - ١٠٠ پرسیاری ورد و تەواو.</p>
-                                <button onclick="startInteractiveQuiz('qbank', 2)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30">دەستپێکردنی بانکی پرسیاری بەندی ٢ (١٠٠ پرسیار)</button>
+                                <button onclick="startInteractiveQuiz('qbank', 2)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">دەستپێکردنی بانکی پرسیاری بەندی ٢</button>
                             </div>
-                            <div id="interactive-quiz-container"></div>
                         </div>
                     `;
-                } else if (moduleId === 'one_vs_one') {
-                    modalBody.innerHTML = `
-                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700 space-y-4 text-xs">
-                            <h4 class="font-bold text-rose-400 text-sm"><i class="fa-solid fa-shield-halved"></i> پێشبڕکێی دوو بە دوو (فێرخوازی یەکەم vs فێرخوازی دووەم)</h4>
-                            <p class="text-slate-300">فێرخوازی یەکەم پرسیار دەنێرێت، و فێرخوازی دووەم وەڵام دەداتەوە!</p>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
-                                    <h5 class="font-bold text-indigo-300">کۆنترۆڵی فێرخوازی یەکەم (پرسیارکەر):</h5>
-                                    <button onclick="duoTriggerQuestion()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold transition">دروستکردن و ناردنی پرسیار</button>
-                                    <div id="duo-q-display" class="text-slate-300 bg-slate-900 p-3 rounded-lg min-h-[60px]">هیچ پرسیارێک نەنێردراوە هێشتا.</div>
-                                </div>
-                                
-                                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
-                                    <h5 class="font-bold text-emerald-300">کۆنترۆڵی فێرخوازی دووەم (وەڵامدەرەوە):</h5>
-                                    <div class="space-y-1.5">
-                                        <label class="block bg-slate-900 p-2 rounded-lg cursor-pointer hover:bg-slate-700"><input type="radio" name="duo_ans" value="0" class="ml-2"> A) خانەی خوێن</label>
-                                        <label class="block bg-slate-900 p-2 rounded-lg cursor-pointer hover:bg-slate-700"><input type="radio" name="duo_ans" value="1" class="ml-2"> B) ئاو و ئەستەم</label>
-                                        <label class="block bg-slate-900 p-2 rounded-lg cursor-pointer hover:bg-slate-700"><input type="radio" name="duo_ans" value="2" class="ml-2"> C) دڵ و لولەکانی خوێن</label>
-                                    </div>
-                                    <button onclick="duoSubmitAnswer()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-bold transition">ناردنی وەڵام و پشکنین</button>
-                                </div>
-                            </div>
-                            <div id="duo-result" class="text-center font-bold text-sm"></div>
-                        </div>
-                    `;
+                    openModal('module-modal');
                 } else {
-                    modalBody.innerHTML = `<p class="text-slate-400">ئەم بەشە بۆ زیندەزانی پۆلی ١٢ ئامادەیە.</p>`;
+                    modalBody.innerHTML = `<p class="text-slate-300">ئەم بەشە (${moduleTitle}) بۆ پۆلی ١٢ی زیندەزانی ئامادەیە و لە نەخشەی پلاتفۆرمەکەدا کارا کراوە.</p>`;
+                    openModal('module-modal');
                 }
             } else {
-                modalBody.innerHTML = `<p class="text-slate-400">ناوەڕۆکی ئەم بەشە بۆ وانەی ${selectedSubject} ئامادە دەکرێت.</p>`;
-            }
-
-            openModal('module-modal');
-        }
-
-        // Engine Code
-        let currentQuestionIndex = 0;
-        let activeQuestions = [];
-        let answeredCurrent = false;
-
-        function startInteractiveQuiz(type, id) {
-            if (type === 'qbank') {
-                activeQuestions = (id === 1) ? chapter1Questions : chapter2Questions;
-            } else if (type === 'quiz') {
-                const startIdx = (id - 1) * 10;
-                activeQuestions = chapter1Questions.slice(startIdx, startIdx + 10);
-            }
-            currentQuestionIndex = 0;
-            answeredCurrent = false;
-            renderCurrentQuestion();
-        }
-
-        function renderCurrentQuestion() {
-            const container = document.getElementById('interactive-quiz-container');
-            if(!container) return;
-            if(activeQuestions.length === 0) return;
-
-            const q = activeQuestions[currentQuestionIndex];
-            
-            let html = `
-                <div class="mt-4 p-4 bg-slate-900 rounded-2xl border border-indigo-500/40 space-y-4 shadow-xl">
-                    <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-800 pb-2">
-                        <span>پرسیاری ${currentQuestionIndex + 1} لە ${activeQuestions.length}</span>
-                        <span class="text-indigo-400 font-bold">پۆلی ١٢ زانستی - زیندەزانی</span>
-                    </div>
-                    <p class="text-sm font-semibold text-white leading-relaxed">${q.text}</p>
-                    <div class="space-y-2 text-xs">
-            `;
-
-            q.options.forEach((opt, idx) => {
-                html += `
-                    <label class="block bg-slate-800 p-3 rounded-xl border border-slate-700 cursor-pointer hover:border-indigo-500 transition">
-                        <input type="radio" name="current_q_option" value="${idx}" onchange="checkAnswer(${idx})" class="ml-2"> ${opt}
-                    </label>
-                `;
-            });
-
-            html += `
-                    </div>
-                    <div id="feedback-box" class="hidden p-3 rounded-xl text-xs font-bold"></div>
-                    <div class="flex justify-between items-center pt-3 border-t border-slate-800">
-                        <button onclick="prevQuestion()" ${currentQuestionIndex === 0 ? 'disabled' : ''} class="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white px-4 py-2 rounded-xl text-xs font-bold transition">
-                            <i class="fa-solid fa-arrow-right ml-1"></i> پێشوو
-                        </button>
-                        <button id="next-btn" onclick="nextQuestion()" disabled class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white px-6 py-2 rounded-xl text-xs font-bold transition">
-                            دواتر <i class="fa-solid fa-arrow-left mr-1"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            container.innerHTML = html;
-        }
-
-        function checkAnswer(selectedIdx) {
-            if(answeredCurrent) return;
-            answeredCurrent = true;
-
-            const nextBtn = document.getElementById('next-btn');
-            const feedbackBox = document.getElementById('feedback-box');
-            if(nextBtn) nextBtn.disabled = false;
-
-            const q = activeQuestions[currentQuestionIndex];
-            if(feedbackBox) {
-                feedbackBox.classList.remove('hidden');
-                if(selectedIdx === q.correct) {
-                    feedbackBox.className = "p-3 rounded-xl text-xs font-bold bg-emerald-950/60 border border-emerald-500/40 text-emerald-300";
-                    feedbackBox.innerHTML = "🎉 وەڵامەکەت ڕاستە! (+١ خاڵ بۆ رێژەی کۆی خاڵەکانت)";
-                    userXP += 1;
-                    document.getElementById('user-xp').innerText = userXP;
-                    updateUserInLeaderboard();
-                } else {
-                    feedbackBox.className = "p-3 rounded-xl text-xs font-bold bg-rose-950/60 border border-rose-500/40 text-rose-300";
-                    feedbackBox.innerHTML = "❌ وەڵامەکەت هەڵەیە.";
-                }
+                modalBody.innerHTML = `<p class="text-slate-300">مۆدیۆڵی (${moduleTitle}) بۆ وانەی ${selectedSubject} پۆلی ${selectedGrade} چالاکە.</p>`;
+                openModal('module-modal');
             }
         }
 
-        function nextQuestion() {
-            answeredCurrent = false;
-            if(currentQuestionIndex < activeQuestions.length - 1) {
-                currentQuestionIndex++;
-                renderCurrentQuestion();
-            } else {
-                alert('پیرۆزە! ئەم بەشە تەواو بوو. خاڵەکانت نوێکرانەوە.');
-            }
-        }
-
-        function prevQuestion() {
-            answeredCurrent = false;
-            if(currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-                renderCurrentQuestion();
-            }
-        }
-
-        function duoTriggerQuestion() {
-            const display = document.getElementById('duo-q-display');
-            display.innerHTML = "پرسیار: کام لە ئەندامانی لەشی مرۆڤ بەرپرسە لە گواستنەوەی خوێنی ئۆکسجیندار؟";
-        }
-
-        function duoSubmitAnswer() {
-            const radios = document.getElementsByName('duo_ans');
-            let selected = -1;
-            radios.forEach((r, i) => { if(r.checked) selected = i; });
-            const res = document.getElementById('duo-result');
-
-            if(selected === 2) {
-                res.className = "text-center font-bold text-sm text-emerald-400 mt-2";
-                res.innerHTML = "🎉 فێرخوازی دووەم وەڵامی ڕاستی داوە! +١ خاڵ سەرکەوتن.";
-                userXP += 1;
-                document.getElementById('user-xp').innerText = userXP;
-                updateUserInLeaderboard();
-            } else {
-                res.className = "text-center font-bold text-sm text-rose-400 mt-2";
-                res.innerHTML = "❌ وەڵامەکە هەڵەیە!";
-            }
-        }
-
-        function updateUserInLeaderboard() {
-            let found = false;
-            studentsList.forEach(s => {
-                if(s.name === currentUserName) {
-                    s.xp = userXP;
-                    found = true;
-                }
-            });
-            if(!found) {
-                studentsList.push({ name: currentUserName, xp: userXP });
-            }
-            studentsList.sort((a, b) => b.xp - a.xp);
-        }
-
-        function openLeaderboardModal() {
-            updateUserInLeaderboard();
-            const listContainer = document.getElementById('leaderboard-list');
-            const rewardTitles = ["خەڵاتی بریلیانت (یەکەم)", "خەڵاتی سوپەر (دووەم)", "خەڵاتی دایەمۆند (سێیەم)", "خەڵاتی زێڕ (چوارەم)", "خەڵاتی زیو (پێنجەم)", "خەڵاتی برۆنز (شەشەم)"];
-            
-            let html = "";
-            studentsList.forEach((st, idx) => {
-                let rewardBadge = idx < 6 ? `<span class="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full">${rewardTitles[idx]}</span>` : `<span class="text-[10px] text-slate-500">بەبێ خەڵات</span>`;
-                let borderStyle = idx === 0 ? "border-amber-500 bg-amber-950/20" : "border-slate-700 bg-slate-900";
-                
-                html += `
-                    <div class="flex justify-between items-center p-3 rounded-xl border ${borderStyle}">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-amber-400">#${idx + 1} ${st.name}</span>
-                            ${rewardBadge}
-                        </div>
-                        <span class="font-bold text-amber-400">${st.xp} XP</span>
-                    </div>
-                `;
-            });
-            listContainer.innerHTML = html;
-            openModal('leaderboard-modal');
-        }
-
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        function handleRegister(e) {
-            e.preventDefault();
-            currentUserName = document.getElementById('reg-fullname').value;
-            userXP = 150;
-            document.getElementById('user-xp').innerText = userXP;
-            updateUserInLeaderboard();
-            if(document.getElementById('reg-email').value === ADMIN_EMAIL) {
-                document.getElementById('admin-dashboard-nav-btn').classList.remove('hidden');
-            }
-            closeModal('register-modal');
-            alert('هەژمارەکەت بە سەرکەوتوویی دروستکرا!');
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            if(email === ADMIN_EMAIL) {
-                document.getElementById('admin-dashboard-nav-btn').classList.remove('hidden');
-            }
-            closeModal('login-modal');
-            alert('بە سەرکەوتوویی چووە ژوورەوە!');
-        }
-
-        window.onload = renderView;
+        renderView();
     </script>
-</body>
-</html>
+</body></html>
