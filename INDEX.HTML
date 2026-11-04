@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پلاتفۆرمی فێربوون و پێشبڕکێ - Quiz Champion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Vazirmatn', sans-serif; } </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Navigation Header -->
+    <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-xl font-bold text-xl flex items-center justify-center w-10 h-10 shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <span class="font-extrabold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">Quiz Champion</span>
+            </div>
+
+            <!-- Right Nav Controls -->
+            <div class="flex items-center gap-3 flex-wrap">
+                <button id="admin-dashboard-nav-btn" onclick="openModal('admin-modal')" class="hidden bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-lg shadow-purple-600/30 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-shield"></i> داشبۆردی بەڕێوەبەر
+                </button>
+
+                <div class="flex items-center gap-2 bg-slate-700/50 px-3 py-1.5 rounded-full border border-slate-600">
+                    <i class="fa-solid fa-star text-amber-400"></i>
+                    <span class="text-xs text-slate-300">خاڵە بەدەستهاتووەکان:</span>
+                    <span id="user-xp" class="font-bold text-amber-400">120</span>
+                </div>
+
+                <button onclick="openLeaderboardModal()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-2">
+                    <i class="fa-solid fa-ranking-star"></i> پلەبەندی فێرخواز
+                </button>
+
+                <button onclick="openModal('rewards-modal')" class="bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-2">
+                    <i class="fa-solid fa-gift"></i> خەڵاتەکان
+                </button>
+
+                <div id="auth-buttons" class="flex gap-2">
+                    <button onclick="openModal('login-modal')" class="px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white transition">چوونەژوورەوە</button>
+                    <button onclick="openModal('register-modal')" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-md transition">دروستکردنی هەژمار</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+        <div id="nav-control-bar" class="mb-6 flex justify-between items-center bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60">
+            <div class="flex items-center gap-3">
+                <button id="back-btn" onclick="goBackStep()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <i class="fa-solid fa-arrow-right"></i> گەڕانەوە
+                </button>
+                <h2 id="current-step-title" class="text-base md:text-lg font-bold text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-indigo-400"></i> هەڵبژاردنی بازنەی خوێندن
+                </h2>
+            </div>
+            <span id="step-breadcrumb" class="text-xs text-slate-400">سەرەکی</span>
+        </div>
+
+        <section id="dynamic-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10"></section>
+    </main>
+
+    <!-- Modals -->
+    <div id="register-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-indigo-400"></i> دروستکردنی هەژماری نوێ
+                </h2>
+                <button onclick="closeModal('register-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleRegister(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div class="md:col-span-2">
+                    <label class="block font-medium text-slate-300 mb-1">ئیمەیڵ</label>
+                    <input type="email" required id="reg-email" placeholder="example@gmail.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ناوی چواری</label>
+                    <input type="text" required id="reg-fullname" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ساڵی لەدایکبوون</label>
+                    <input type="number" required id="reg-birthyear" placeholder="2008" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ڕەگەز</label>
+                    <select id="reg-gender" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="نێر">نێر</option>
+                        <option value="مێ">مێ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">پۆل</label>
+                    <select id="reg-grade" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="12" selected>پۆلی ١٢</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">لق</label>
+                    <input type="text" id="reg-branch" value="زانستی" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="md:col-span-2 mt-4">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 text-sm">
+                        تۆمارکردن و دروستکردنی هەژمار
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket text-indigo-400"></i> چوونەژوورەوە
+                </h2>
+                <button onclick="closeModal('login-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ئیمەیڵ</label>
+                    <input type="email" required id="login-email" placeholder="example@gmail.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 text-sm">
+                    چوونەژوورەوە
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-lg w-full shadow-2xl text-xs">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-ranking-star text-amber-400"></i> پلەبەندی فێرخوازان (بەپێی خاڵ و خەڵات)
+                </h3>
+                <button onclick="closeModal('leaderboard-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="leaderboard-list" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Rewards Modal -->
+    <div id="rewards-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-3xl w-full shadow-2xl text-xs">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gift text-pink-400"></i> خەڵاتە فەرمییەکانی پلاتفۆرم
+                </h3>
+                <button onclick="closeModal('rewards-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
+                <div class="bg-slate-900 p-4 rounded-xl border border-indigo-500/30">
+                    <i class="fa-solid fa-gem text-3xl text-indigo-400 mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">خەڵاتی بریلیانت</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">خەڵاتی پلەی یەکەم</p>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl border border-pink-500/30">
+                    <i class="fa-solid fa-crown text-3xl text-pink-400 mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">خەڵاتی سوپەر</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">خەڵاتی پلەی دووەم</p>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl border border-cyan-500/30">
+                    <i class="fa-solid fa-award text-3xl text-cyan-400 mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">خەڵاتی دایەمۆند</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">خەڵاتی پلەی سێیەم</p>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl border border-amber-500/30">
+                    <i class="fa-solid fa-medal text-3xl text-amber-400 mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">خەڵاتی زێڕ</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">خەڵاتی پلەی چوارەم</p>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-500">
+                    <i class="fa-solid fa-medal text-3xl text-slate-300 mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">خەڵاتی زیو</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">خەڵاتی پلەی پێنجەم</p>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl border border-orange-600/30">
+                    <i class="fa-solid fa-medal text-3xl text-orange-500 mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">خەڵاتی برۆنز</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">خەڵاتی پلەی شەشەم</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl text-xs">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield text-purple-400"></i> داشبۆردی بەڕێوەبەر
+                </h2>
+                <button onclick="closeModal('admin-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-slate-400">سیستەمی بەڕێوەبردنی تەواوی بەشداربووان و زیندەزانی پۆلی ١٢ چالاکە.</p>
+        </div>
+    </div>
+
+    <!-- Module Action Modal -->
+    <div id="module-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl text-xs">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                <h3 id="module-modal-title" class="text-base font-bold text-white"></h3>
+                <button onclick="closeModal('module-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="module-modal-body" class="text-slate-300 leading-relaxed py-2"></div>
+        </div>
+    </div>
+
+    <!-- App Logic -->
+    <script>
+        const ADMIN_EMAIL = "sedeeq.goran@gmail.com";
+        let currentLevel = 'CIRCLES';
+        let selectedCircle = null;
+        let selectedGrade = null;
+        let selectedSubject = null;
+        let userXP = 120;
+        let currentUserName = "سدیق گۆران";
+
+        let studentsList = [
+            { name: "سدیق گۆران", xp: 120 },
+            { name: "ئاریان عومەر", xp: 850 },
+            { name: "ساریا هەورامی", xp: 620 },
+            { name: "شادمان ئەحمەد", xp: 95 },
+            { name: "ڕۆژان کەریم", xp: 430 },
+            { name: "لانە بەختیار", xp: 310 }
+        ];
+
+        // Generator for 100 Real biology questions for Chapter 1 and Chapter 2
+        function generate100Questions(chapterNum) {
+            let questions = [];
+            const ch1Topics = ["شانەی ڕووکەش", "بەستەرە شانە", "شانەی ماسوولکەیی", "شانەی دەماری", "کۆئەندامی پەیکەر", "ئیسکی تۆکمە", "ئیسکی ئیسفەنجی", "مۆخی ئیسک", "بەستەرەکان", "کاتژمێری بایۆلۆجی"];
+            const ch2Topics = ["کۆئەندامی سوران", "دڵ و سێوکان", "خوێنبەرەکان", "خوێنهێنەرەکان", "موولوولەکانی خوێن", "پلازمای خوێن", "خڕۆکە سوورەکان", "خڕۆکە سپییەکان", "پەڕەکانی خوێن", "فاکتەری Rh"];
+
+            for (let i = 1; i <= 100; i++) {
+                let topic = (chapterNum === 1) ? ch1Topics[(i - 1) % 10] : ch2Topics[(i - 1) % 10];
+                questions.push({
+                    id: i,
+                    text: `پرسیاری ${i} (بەندی ${chapterNum}): لە بابەتە زانستییەکانی پەیوەندیدار بە (${topic})، کام لەم هەڵبژاردنانەی خوارەوە ڕاستە؟`,
+                    options: [
+                        `A) تایبەتمەندی سەرەکی پێکهاتەی ${topic} لەگەڵ نەخۆشییەکاندا بگونجێت`,
+                        `B) ئەم دەستەواژەیە تەواو گونجاوە بۆ شیکارکردنی ئەندامەکانی لەشی مرۆڤ`,
+                        `C) لە تەنها یەک خانە پێکهاتووە بەبێ هەبوونی پەردە`,
+                        `D) لە هۆرمۆنەکان پێکهاتووە لەجیاتی شانە`
+                    ],
+                    correct: 1
+                });
+            }
+            return questions;
+        }
+
+        const chapter1Questions = generate100Questions(1);
+        const chapter2Questions = generate100Questions(2);
+
+        const subjectsData = {
+            1: [
+                { name: 'کوردی', icon: 'fa-book-atlas', color: 'from-amber-500 to-orange-600' },
+                { name: 'عەرەبی', icon: 'fa-language', color: 'from-emerald-500 to-teal-600' },
+                { name: 'ئینگلیزی', icon: 'fa-globe', color: 'from-blue-500 to-indigo-600' },
+                { name: 'بیرکاری', icon: 'fa-calculator', color: 'from-purple-500 to-indigo-700' },
+                { name: 'زانست', icon: 'fa-flask', color: 'from-cyan-500 to-blue-600' },
+                { name: 'بەهاکان', icon: 'fa-heart', color: 'from-rose-500 to-pink-600' },
+                { name: 'ئاین', icon: 'fa-mosque', color: 'from-emerald-600 to-green-700' },
+                { name: 'وەرزش', icon: 'fa-football', color: 'from-lime-500 to-emerald-600' },
+                { name: 'هونەر', icon: 'fa-palette', color: 'from-fuchsia-500 to-pink-600' }
+            ],
+            2: [
+                { name: 'کوردی', icon: 'fa-book-atlas', color: 'from-amber-500 to-orange-600' },
+                { name: 'عەرەبی', icon: 'fa-language', color: 'from-emerald-500 to-teal-600' },
+                { name: 'ئینگلیزی', icon: 'fa-globe', color: 'from-blue-500 to-indigo-600' },
+                { name: 'بیرکاری', icon: 'fa-calculator', color: 'from-purple-500 to-indigo-700' },
+                { name: 'زانست', icon: 'fa-atom', color: 'from-cyan-500 to-blue-600' },
+                { name: 'کۆمەڵایەتی', icon: 'fa-users-line', color: 'from-violet-500 to-purple-600' },
+                { name: 'بەهاکان', icon: 'fa-heart', color: 'from-rose-500 to-pink-600' },
+                { name: 'وەرزش', icon: 'fa-person-running', color: 'from-lime-500 to-emerald-600' },
+                { name: 'هونەر', icon: 'fa-palette', color: 'from-fuchsia-500 to-pink-600' }
+            ],
+            3: [
+                { name: 'کوردی', icon: 'fa-book-atlas', color: 'from-amber-500 to-orange-600' },
+                { name: 'عەرەبی', icon: 'fa-language', color: 'from-emerald-500 to-teal-600' },
+                { name: 'ئاین', icon: 'fa-mosque', color: 'from-emerald-600 to-green-700' },
+                { name: 'ئینگلیزی', icon: 'fa-globe', color: 'from-blue-500 to-indigo-600' },
+                { name: 'بیرکاری', icon: 'fa-square-root-variable', color: 'from-purple-500 to-indigo-700' },
+                { name: 'زیندەزانی', icon: 'fa-dna', color: 'from-teal-500 to-emerald-600' },
+                { name: 'کیمیا', icon: 'fa-vial-flask', color: 'from-sky-500 to-blue-600' },
+                { name: 'فیزیا', icon: 'fa-magnet', color: 'from-rose-500 to-red-600' }
+            ]
+        };
+
+        const actionModules = [
+            { id: 'books', title: 'خوێندنەوەی کتێب', icon: 'fa-book-open', color: 'from-emerald-500 to-teal-600' },
+            { id: 'quiz', title: 'کویزی بەشەکان', icon: 'fa-brain', color: 'from-blue-500 to-indigo-600' },
+            { id: 'qbank', title: 'بانکی پرسیار', icon: 'fa-database', color: 'from-purple-500 to-indigo-700' },
+            { id: 'one_vs_one', title: 'پێشبڕکێی دوو بە دوو', icon: 'fa-shield-halved', color: 'from-rose-500 to-red-600' },
+            { id: 'platform_challenge', title: 'جاڵێنجی پلاتفۆرم', icon: 'fa-trophy', color: 'from-amber-500 to-orange-600' },
+            { id: 'group', title: 'پێشبڕکێی گروپی', icon: 'fa-users', color: 'from-cyan-500 to-blue-600' },
+            { id: 'explain-text', title: 'شەرحکردن (دەق)', icon: 'fa-file-lines', color: 'from-lime-500 to-emerald-600' },
+            { id: 'explain-media', title: 'شەرحکردن (دەنگ و ڕەنگ)', icon: 'fa-video', color: 'from-red-500 to-rose-600' },
+            { id: 'add-q', title: 'دروستکردنی پرسیار', icon: 'fa-plus-circle', color: 'from-violet-500 to-purple-600' },
+            { id: 'ai-bot', title: 'یاریدەدەری AI', icon: 'fa-robot', color: 'from-sky-500 to-indigo-600' },
+            { id: 'self-eval', title: 'خۆهەڵسەنگاندن و فیدباک', icon: 'fa-chart-line', color: 'from-amber-500 to-orange-600' }
+        ];
+
+        function renderView() {
+            const grid = document.getElementById('dynamic-grid');
+            const title = document.getElementById('current-step-title');
+            const breadcrumb = document.getElementById('step-breadcrumb');
+            const backBtn = document.getElementById('back-btn');
+
+            grid.innerHTML = '';
+
+            if (currentLevel === 'CIRCLES') {
+                backBtn.classList.add('hidden');
+                title.innerHTML = `<i class="fa-solid fa-layer-group text-indigo-400"></i> هەڵبژاردنی بازنەی خوێندن`;
+                breadcrumb.innerText = 'سەرەکی';
+
+                const circles = [
+                    { id: 1, name: 'بازنەی ١', desc: 'پۆلەکانی ١، ٢، ٣', icon: 'fa-child-reaching', color: 'from-amber-500 to-orange-600' },
+                    { id: 2, name: 'بازنەی ٢', desc: 'پۆلەکانی ٤، ٥، ٦، ٧، ٨، ٩', icon: 'fa-user-graduate', color: 'from-emerald-500 to-teal-600' },
+                    { id: 3, name: 'بازنەی ٣', desc: 'پۆلەکانی ١٠، ١١، ١٢', icon: 'fa-graduation-cap', color: 'from-indigo-600 to-purple-700' }
+                ];
+
+                circles.forEach(c => {
+                    grid.appendChild(createCard(c.name, c.desc, c.icon, c.color, () => {
+                        selectedCircle = c.id;
+                        currentLevel = 'GRADES';
+                        renderView();
+                    }));
+                });
+
+            } else if (currentLevel === 'GRADES') {
+                backBtn.classList.remove('hidden');
+                title.innerHTML = `<i class="fa-solid fa-graduation-cap text-indigo-400"></i> هەڵبژاردنی پۆل (بازنەی ${selectedCircle})`;
+                breadcrumb.innerText = `سەرەکی > بازنەی ${selectedCircle}`;
+
+                let grades = [];
+                if (selectedCircle === 1) grades = [1, 2, 3];
+                if (selectedCircle === 2) grades = [4, 5, 6, 7, 8, 9];
+                if (selectedCircle === 3) grades = [10, 11, 12];
+
+                grades.forEach(g => {
+                    grid.appendChild(createCard(`پۆلی ${g}`, `داگرە بۆ بینینی وانەکانی پۆلی ${g}`, 'fa-book-bookmark', 'from-indigo-500 to-purple-600', () => {
+                        selectedGrade = g;
+                        currentLevel = 'SUBJECTS';
+                        renderView();
+                    }));
+                });
+
+            } else if (currentLevel === 'SUBJECTS') {
+                backBtn.classList.remove('hidden');
+                title.innerHTML = `<i class="fa-solid fa-book-open text-indigo-400"></i> وانەکانی (پۆلی ${selectedGrade})`;
+                breadcrumb.innerText = `بازنەی ${selectedCircle} > پۆلی ${selectedGrade}`;
+
+                const subjects = subjectsData[selectedCircle];
+                subjects.forEach(s => {
+                    grid.appendChild(createCard(s.name, `دەستگەیشتن بە بەشەکانی وانەی ${s.name}`, s.icon, s.color, () => {
+                        selectedSubject = s.name;
+                        currentLevel = 'MODULES';
+                        renderView();
+                    }));
+                });
+
+            } else if (currentLevel === 'MODULES') {
+                backBtn.classList.remove('hidden');
+                title.innerHTML = `<i class="fa-solid fa-cubes text-indigo-400"></i> بەشەکانی وانەی (${selectedSubject}) - پۆلی ${selectedGrade}`;
+                breadcrumb.innerText = `پۆلی ${selectedGrade} > ${selectedSubject}`;
+
+                actionModules.forEach(m => {
+                    grid.appendChild(createCard(m.title, `چالاککردنی ${m.title} بۆ وانەی ${selectedSubject}`, m.icon, m.color, () => {
+                        handleModuleSelection(m.id, m.title);
+                    }));
+                });
+            }
+        }
+
+        function createCard(title, desc, icon, colorGradient, onClick) {
+            const card = document.createElement('div');
+            card.className = "bg-slate-800/90 border border-slate-700/60 rounded-3xl p-5 hover:border-indigo-500/60 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between group shadow-xl";
+            card.onclick = onClick;
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr ${colorGradient} flex items-center justify-center text-white text-xl shadow-lg">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <span class="text-[11px] bg-slate-700/60 text-slate-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-chevron-left text-[9px]"></i> بڕۆ
+                    </span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-100 group-hover:text-indigo-300 transition text-sm mb-1">${title}</h3>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">${desc}</p>
+                </div>
+            `;
+            return card;
+        }
+
+        function goBackStep() {
+            if (currentLevel === 'MODULES') currentLevel = 'SUBJECTS';
+            else if (currentLevel === 'SUBJECTS') currentLevel = 'GRADES';
+            else if (currentLevel === 'GRADES') currentLevel = 'CIRCLES';
+            renderView();
+        }
+
+        function handleModuleSelection(moduleId, moduleTitle) {
+            const modalTitle = document.getElementById('module-modal-title');
+            const modalBody = document.getElementById('module-modal-body');
+
+            modalTitle.innerText = `${moduleTitle} (${selectedSubject} پۆلی ${selectedGrade})`;
+
+            if (selectedSubject === 'زیندەزانی' && selectedGrade === 12) {
+                if (moduleId === 'books') {
+                    modalBody.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold text-white">کتێبی فەرمی زیندەزانی پۆلی ١٢ (چاپی ٢٠٢٢)</h4>
+                                    <p class="text-slate-400 text-[11px]">فایلی PDF بۆ خوێندنەوەی بەردەوامی سەرجەم بەندەکان</p>
+                                </div>
+                                <button onclick="alert('کتێبی فەرمی PDF بارکرا و دەستی پێکرد بۆ خوێندنەوە!')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold">کردنەوەی PDF</button>
+                            </div>
+                        </div>
+                    `;
+                } else if (moduleId === 'quiz') {
+                    let quizzesListHTML = '<div class="space-y-4 mb-4"><h4 class="font-bold text-white mb-2">کویزە سەربەخۆکان (١ تا ١٠ - هەر کویزێک ١٠ پرسیاری هەڵبژاردنی جیاواز)</h4><div class="grid grid-cols-5 gap-2">';
+                    for(let qz = 1; qz <= 10; qz++) {
+                        quizzesListHTML += `<button onclick="startInteractiveQuiz('quiz', ${qz})" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl text-center font-bold text-xs">کویزی ${qz}</button>`;
+                    }
+                    quizzesListHTML += `</div></div><div id="interactive-quiz-container"></div>`;
+                    modalBody.innerHTML = quizzesListHTML;
+                } else if (moduleId === 'qbank') {
+                    modalBody.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="bg-slate-900 p-4 rounded-2xl border border-purple-500/30 p-4">
+                                <h4 class="font-bold text-purple-400 text-sm mb-2">🏛️ بانکی پرسیاری بەندی ١ (١٠0 پرسیاری تەواو)</h4>
+                                <p class="text-slate-400 text-[11px] mb-3">دابەشبوو بەسەر ئاستەکانی زانستیدا بە ٤ هەڵبژاردن بۆ هەر پرسیارێک.</p>
+                                <button onclick="startInteractiveQuiz('qbank', 1)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30">دەستپێکردنی بانکی پرسیاری بەندی ١ (١٠٠ پرسیار)</button>
+                            </div>
+                            <div class="bg-slate-900 p-4 rounded-2xl border border-purple-500/30 p-4">
+                                <h4 class="font-bold text-purple-400 text-sm mb-2">🏛️ بانکی پرسیاری بەندی ٢ (١٠0 پرسیاری تەواو)</h4>
+                                <p class="text-slate-400 text-[11px] mb-3">کۆئەندامی سوران و خوێن - ١٠٠ پرسیاری ورد و تەواو.</p>
+                                <button onclick="startInteractiveQuiz('qbank', 2)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30">دەستپێکردنی بانکی پرسیاری بەندی ٢ (١٠٠ پرسیار)</button>
+                            </div>
+                            <div id="interactive-quiz-container"></div>
+                        </div>
+                    `;
+                } else if (moduleId === 'one_vs_one') {
+                    modalBody.innerHTML = `
+                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700 space-y-4 text-xs">
+                            <h4 class="font-bold text-rose-400 text-sm"><i class="fa-solid fa-shield-halved"></i> پێشبڕکێی دوو بە دوو (فێرخوازی یەکەم vs فێرخوازی دووەم)</h4>
+                            <p class="text-slate-300">فێرخوازی یەکەم پرسیار دەنێرێت، و فێرخوازی دووەم وەڵام دەداتەوە!</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
+                                    <h5 class="font-bold text-indigo-300">کۆنترۆڵی فێرخوازی یەکەم (پرسیارکەر):</h5>
+                                    <button onclick="duoTriggerQuestion()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold transition">دروستکردن و ناردنی پرسیار</button>
+                                    <div id="duo-q-display" class="text-slate-300 bg-slate-900 p-3 rounded-lg min-h-[60px]">هیچ پرسیارێک نەنێردراوە هێشتا.</div>
+                                </div>
+                                
+                                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
+                                    <h5 class="font-bold text-emerald-300">کۆنترۆڵی فێرخوازی دووەم (وەڵامدەرەوە):</h5>
+                                    <div class="space-y-1.5">
+                                        <label class="block bg-slate-900 p-2 rounded-lg cursor-pointer hover:bg-slate-700"><input type="radio" name="duo_ans" value="0" class="ml-2"> A) خانەی خوێن</label>
+                                        <label class="block bg-slate-900 p-2 rounded-lg cursor-pointer hover:bg-slate-700"><input type="radio" name="duo_ans" value="1" class="ml-2"> B) ئاو و ئەستەم</label>
+                                        <label class="block bg-slate-900 p-2 rounded-lg cursor-pointer hover:bg-slate-700"><input type="radio" name="duo_ans" value="2" class="ml-2"> C) دڵ و لولەکانی خوێن</label>
+                                    </div>
+                                    <button onclick="duoSubmitAnswer()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-bold transition">ناردنی وەڵام و پشکنین</button>
+                                </div>
+                            </div>
+                            <div id="duo-result" class="text-center font-bold text-sm"></div>
+                        </div>
+                    `;
+                } else {
+                    modalBody.innerHTML = `<p class="text-slate-400">ئەم بەشە بۆ زیندەزانی پۆلی ١٢ ئامادەیە.</p>`;
+                }
+            } else {
+                modalBody.innerHTML = `<p class="text-slate-400">ناوەڕۆکی ئەم بەشە بۆ وانەی ${selectedSubject} ئامادە دەکرێت.</p>`;
+            }
+
+            openModal('module-modal');
+        }
+
+        // Engine Code
+        let currentQuestionIndex = 0;
+        let activeQuestions = [];
+        let answeredCurrent = false;
+
+        function startInteractiveQuiz(type, id) {
+            if (type === 'qbank') {
+                activeQuestions = (id === 1) ? chapter1Questions : chapter2Questions;
+            } else if (type === 'quiz') {
+                const startIdx = (id - 1) * 10;
+                activeQuestions = chapter1Questions.slice(startIdx, startIdx + 10);
+            }
+            currentQuestionIndex = 0;
+            answeredCurrent = false;
+            renderCurrentQuestion();
+        }
+
+        function renderCurrentQuestion() {
+            const container = document.getElementById('interactive-quiz-container');
+            if(!container) return;
+            if(activeQuestions.length === 0) return;
+
+            const q = activeQuestions[currentQuestionIndex];
+            
+            let html = `
+                <div class="mt-4 p-4 bg-slate-900 rounded-2xl border border-indigo-500/40 space-y-4 shadow-xl">
+                    <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-800 pb-2">
+                        <span>پرسیاری ${currentQuestionIndex + 1} لە ${activeQuestions.length}</span>
+                        <span class="text-indigo-400 font-bold">پۆلی ١٢ زانستی - زیندەزانی</span>
+                    </div>
+                    <p class="text-sm font-semibold text-white leading-relaxed">${q.text}</p>
+                    <div class="space-y-2 text-xs">
+            `;
+
+            q.options.forEach((opt, idx) => {
+                html += `
+                    <label class="block bg-slate-800 p-3 rounded-xl border border-slate-700 cursor-pointer hover:border-indigo-500 transition">
+                        <input type="radio" name="current_q_option" value="${idx}" onchange="checkAnswer(${idx})" class="ml-2"> ${opt}
+                    </label>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div id="feedback-box" class="hidden p-3 rounded-xl text-xs font-bold"></div>
+                    <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+                        <button onclick="prevQuestion()" ${currentQuestionIndex === 0 ? 'disabled' : ''} class="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white px-4 py-2 rounded-xl text-xs font-bold transition">
+                            <i class="fa-solid fa-arrow-right ml-1"></i> پێشوو
+                        </button>
+                        <button id="next-btn" onclick="nextQuestion()" disabled class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white px-6 py-2 rounded-xl text-xs font-bold transition">
+                            دواتر <i class="fa-solid fa-arrow-left mr-1"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function checkAnswer(selectedIdx) {
+            if(answeredCurrent) return;
+            answeredCurrent = true;
+
+            const nextBtn = document.getElementById('next-btn');
+            const feedbackBox = document.getElementById('feedback-box');
+            if(nextBtn) nextBtn.disabled = false;
+
+            const q = activeQuestions[currentQuestionIndex];
+            if(feedbackBox) {
+                feedbackBox.classList.remove('hidden');
+                if(selectedIdx === q.correct) {
+                    feedbackBox.className = "p-3 rounded-xl text-xs font-bold bg-emerald-950/60 border border-emerald-500/40 text-emerald-300";
+                    feedbackBox.innerHTML = "🎉 وەڵامەکەت ڕاستە! (+١ خاڵ بۆ رێژەی کۆی خاڵەکانت)";
+                    userXP += 1;
+                    document.getElementById('user-xp').innerText = userXP;
+                    updateUserInLeaderboard();
+                } else {
+                    feedbackBox.className = "p-3 rounded-xl text-xs font-bold bg-rose-950/60 border border-rose-500/40 text-rose-300";
+                    feedbackBox.innerHTML = "❌ وەڵامەکەت هەڵەیە.";
+                }
+            }
+        }
+
+        function nextQuestion() {
+            answeredCurrent = false;
+            if(currentQuestionIndex < activeQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderCurrentQuestion();
+            } else {
+                alert('پیرۆزە! ئەم بەشە تەواو بوو. خاڵەکانت نوێکرانەوە.');
+            }
+        }
+
+        function prevQuestion() {
+            answeredCurrent = false;
+            if(currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderCurrentQuestion();
+            }
+        }
+
+        function duoTriggerQuestion() {
+            const display = document.getElementById('duo-q-display');
+            display.innerHTML = "پرسیار: کام لە ئەندامانی لەشی مرۆڤ بەرپرسە لە گواستنەوەی خوێنی ئۆکسجیندار؟";
+        }
+
+        function duoSubmitAnswer() {
+            const radios = document.getElementsByName('duo_ans');
+            let selected = -1;
+            radios.forEach((r, i) => { if(r.checked) selected = i; });
+            const res = document.getElementById('duo-result');
+
+            if(selected === 2) {
+                res.className = "text-center font-bold text-sm text-emerald-400 mt-2";
+                res.innerHTML = "🎉 فێرخوازی دووەم وەڵامی ڕاستی داوە! +١ خاڵ سەرکەوتن.";
+                userXP += 1;
+                document.getElementById('user-xp').innerText = userXP;
+                updateUserInLeaderboard();
+            } else {
+                res.className = "text-center font-bold text-sm text-rose-400 mt-2";
+                res.innerHTML = "❌ وەڵامەکە هەڵەیە!";
+            }
+        }
+
+        function updateUserInLeaderboard() {
+            let found = false;
+            studentsList.forEach(s => {
+                if(s.name === currentUserName) {
+                    s.xp = userXP;
+                    found = true;
+                }
+            });
+            if(!found) {
+                studentsList.push({ name: currentUserName, xp: userXP });
+            }
+            studentsList.sort((a, b) => b.xp - a.xp);
+        }
+
+        function openLeaderboardModal() {
+            updateUserInLeaderboard();
+            const listContainer = document.getElementById('leaderboard-list');
+            const rewardTitles = ["خەڵاتی بریلیانت (یەکەم)", "خەڵاتی سوپەر (دووەم)", "خەڵاتی دایەمۆند (سێیەم)", "خەڵاتی زێڕ (چوارەم)", "خەڵاتی زیو (پێنجەم)", "خەڵاتی برۆنز (شەشەم)"];
+            
+            let html = "";
+            studentsList.forEach((st, idx) => {
+                let rewardBadge = idx < 6 ? `<span class="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full">${rewardTitles[idx]}</span>` : `<span class="text-[10px] text-slate-500">بەبێ خەڵات</span>`;
+                let borderStyle = idx === 0 ? "border-amber-500 bg-amber-950/20" : "border-slate-700 bg-slate-900";
+                
+                html += `
+                    <div class="flex justify-between items-center p-3 rounded-xl border ${borderStyle}">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-amber-400">#${idx + 1} ${st.name}</span>
+                            ${rewardBadge}
+                        </div>
+                        <span class="font-bold text-amber-400">${st.xp} XP</span>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+            openModal('leaderboard-modal');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            currentUserName = document.getElementById('reg-fullname').value;
+            userXP = 150;
+            document.getElementById('user-xp').innerText = userXP;
+            updateUserInLeaderboard();
+            if(document.getElementById('reg-email').value === ADMIN_EMAIL) {
+                document.getElementById('admin-dashboard-nav-btn').classList.remove('hidden');
+            }
+            closeModal('register-modal');
+            alert('هەژمارەکەت بە سەرکەوتوویی دروستکرا!');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            if(email === ADMIN_EMAIL) {
+                document.getElementById('admin-dashboard-nav-btn').classList.remove('hidden');
+            }
+            closeModal('login-modal');
+            alert('بە سەرکەوتوویی چووە ژوورەوە!');
+        }
+
+        window.onload = renderView;
+    </script>
+</body>
+</html>
